@@ -12,17 +12,30 @@
     <script type="module" src="./index.js"></script>
   </head>
   <body>
-    <form class="search-form" id="search-form">
-      <input
-        type="text"
-        name="searchQuery"
-        autocomplete="off"
-        placeholder="Search images..."
-      />
-      <button type="submit">Search</button>
-    </form>
+    <div class="container">
+      <form class="search-form" id="search-form">
+        <div class="search-form-container">
+          <input
+            class="search-input"
+            type="text"
+            name="searchQuery"
+            autocomplete="off"
+            placeholder="Search images..."
+          />
+          <button class="searchBtn" type="submit">
+            <svg class="searchBtn-icon">
+              <use href="./images/search-icon.svg#icon-search"></use>
+            </svg>
+          </button>
+        </div>
+      </form>
+    </div>
     <div class="gallery">
       <!-- Картки зображень -->
     </div>
+    <div id="empty"></div>
+    <!-- Load more -->
+    <button type="button" class="load-more is-hidden">Load more</button>
+    <p class="warningText"></p>
   </body>
 </html>

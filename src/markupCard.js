@@ -1,4 +1,4 @@
-export function createCard(arr) {
+export function markupCard(arr) {
   return arr
     .map(
       ({
@@ -9,8 +9,8 @@ export function createCard(arr) {
         views,
         comments,
         downloads,
-      }) => `<div class="photo-card">
-  <img src="${webformatURL}" alt="${tags}" loading="lazy" width="280px"  height="188px"/>
+      }) => `<div class="photo-card"><a class="link" href="${largeImageURL}">
+  <img src="${webformatURL}" alt="${tags}" title="${tags}" loading="lazy"/></a>
   <div class="info">
     <p class="info-item">
       <b>Likes</b><span>${likes}</span>
@@ -29,13 +29,3 @@ export function createCard(arr) {
     )
     .join('');
 }
-
-// У відповіді буде масив зображень, що задовольнили критерії параметрів запиту. Кожне зображення описується об'єктом, з якого тобі цікаві тільки наступні властивості:
-
-// webformatURL - посилання на маленьке зображення для списку карток.
-// largeImageURL - посилання на велике зображення.
-// tags - рядок з описом зображення. Підійде для атрибуту alt.
-// likes - кількість лайків.
-// views - кількість переглядів.
-// comments - кількість коментарів.
-// downloads - кількість завантажень.
