@@ -5,4 +5,6 @@ export const refs = {
   loadMore: document.querySelector('.load-more'),
   warningText: document.querySelector('.warningText'),
   empty: document.getElementById('empty'),
+  loader: document.querySelector('.loader'),
+  backdrop: document.querySelector('.backdrop'),
 };

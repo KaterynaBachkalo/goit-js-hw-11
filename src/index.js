@@ -15,26 +15,21 @@ let imageAmount = 0;
 refs.searchForm.addEventListener('submit', onSearch);
 // refs.loadMore.addEventListener('click', onLoadMore);
 
-async function onSearch(e) {
+function onSearch(e) {
   e.preventDefault();
   refs.gallery.innerHTML = '';
+  page = 1;
+  imageAmount = 0;
+  observer.unobserve(refs.empty);
 
   searchWord = e.currentTarget.searchQuery.value.trim();
-
+  loaderStart();
   if (!searchWord) {
     Notify.warning('Enter a search word, please!');
+    loaderStop();
   } else {
     serviceSearchImages(searchWord, page);
   }
-  return searchWord;
-}
-
-async function onLoadMore() {
-  page += 1;
-
-  const search = await serviceSearchImages(searchWord, page);
-  const smooth = await smoothScroll(search);
-  return smooth;
 }
 
 async function serviceSearchImages(searchWord, page) {
@@ -47,52 +42,75 @@ async function serviceSearchImages(searchWord, page) {
       page: `${page}`,
       per_page: 40,
     });
-
+    loaderStart();
     const response = await axios.get(`${BASE_URL}?key=${API_KEY}`, { params });
-    checkImageAmount(response);
+
+    if (isCorrectName(response)) {
+      // refs.loadMore.classList.remove('is-hidden');
+
+      renderMarkup(response);
+      checkImageAmount(response);
+      observer.observe(refs.empty);
+    }
   } catch (error) {
     console.error(error);
   }
 }
 
-function checkImageAmount(response) {
-  imageAmount += response.data.hits.length;
-  if (imageAmount >= response.data.totalHits) {
-    warningNoImages();
-  } else {
-    fetchImages(response);
+function isCorrectName(response) {
+  if (response.data.hits.length !== 0) {
+    return true;
   }
+
+  // refs.loadMore.classList.add('is-hidden');
+  Notify.failure(
+    'Sorry, there are no images matching your search query. Please try again.'
+  );
+
+  refs.warningText.classList.add('is-hidden');
+  loaderStop();
+  return false;
 }
 
-function fetchImages(response) {
-  if (response.data.hits.length === 0) {
-    // refs.loadMore.classList.add('is-hidden');
-    Notify.failure(
-      'Sorry, there are no images matching your search query. Please try again.'
-    );
-  } else {
-    // refs.loadMore.classList.remove('is-hidden');
+function checkImageAmount(response) {
+  imageAmount += response.data.hits.length;
 
-    if (response.config.params.page === '1') {
-      Notify.success(`Hooray! We found ${response.data.totalHits} images!`);
-    }
+  if (
+    imageAmount >= response.data.totalHits &&
+    response.data.hits.length !== 0
+  ) {
+    warningNoImages();
+    loaderStop();
+  }
 
-    renderMarkup(response);
-    observer.observe(refs.empty);
+  if (
+    imageAmount <= response.data.hits.length &&
+    response.data.hits.length !== 0
+  ) {
+    Notify.success(`Hooray! We found ${response.data.totalHits} images!`);
+    loaderStop();
+  }
+
+  if (
+    imageAmount > response.data.hits.length &&
+    response.data.hits.length !== 0
+  ) {
+    smoothScroll();
   }
 }
 
 function renderMarkup(response) {
   refs.gallery.insertAdjacentHTML('beforeend', markupCard(response.data.hits));
-
   lightbox.refresh();
+  loaderStop();
 }
 
 function warningNoImages() {
   // refs.loadMore.classList.add('is-hidden');
-  Notify.warning("We're sorry, but you've reached the end of search results.");
   refs.warningText.textContent =
     "We're sorry, but you've reached the end of search results.";
+  Notify.warning("We're sorry, but you've reached the end of search results.");
+  loaderStop();
 }
 
 function smoothScroll() {
@@ -107,10 +125,13 @@ function smoothScroll() {
 
 const onEntry = entries => {
   entries.forEach(entry => {
-    if (entry.isIntersecting && searchWord !== '') {
-      console.log('Пора грузить еще статьи');
-      serviceSearchImages(searchWord, page);
+    if (entry.isIntersecting && searchWord !== '' && imageAmount < 500) {
+      loaderStart();
+      console.log(loaderStart);
       page += 1;
+      serviceSearchImages(searchWord, page);
+    } else if (imageAmount > 500) {
+      observer.unobserve(entry.target);
     }
   });
 };
@@ -118,4 +139,13 @@ const onEntry = entries => {
 const observer = new IntersectionObserver(onEntry, {
   rootMargin: '150px',
 });
-// observer.unobserve(refs.empty);
+
+function loaderStart() {
+  refs.loader.classList.remove('is-hidden');
+  refs.backdrop.classList.remove('is-hidden');
+}
+
+function loaderStop() {
+  refs.loader.classList.add('is-hidden');
+  refs.backdrop.classList.add('is-hidden');
+}
