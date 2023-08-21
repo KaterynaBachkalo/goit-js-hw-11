@@ -11,6 +11,11 @@ let lightbox = new SimpleLightbox('.gallery a', { captionsData: '' });
 let searchWord = '';
 let page = 1;
 let imageAmount = 0;
+let totalHits = 0;
+
+const observer = new IntersectionObserver(onEntry, {
+  rootMargin: '150px',
+});
 
 refs.searchForm.addEventListener('submit', onSearch);
 // refs.loadMore.addEventListener('click', onLoadMore);
@@ -20,10 +25,13 @@ function onSearch(e) {
   refs.gallery.innerHTML = '';
   page = 1;
   imageAmount = 0;
+
   observer.unobserve(refs.empty);
 
   searchWord = e.currentTarget.searchQuery.value.trim();
+
   loaderStart();
+
   if (!searchWord) {
     Notify.warning('Enter a search word, please!');
     loaderStop();
@@ -32,8 +40,22 @@ function onSearch(e) {
   }
 }
 
+function onEntry(entries, observer) {
+  entries.forEach(async entry => {
+    if (entry.isIntersecting && searchWord !== '' && imageAmount < totalHits) {
+      loaderStart();
+      page += 1;
+      serviceSearchImages(searchWord, page);
+    } else if (imageAmount >= totalHits) {
+      observer.unobserve(entry.target);
+    }
+  });
+}
+
 async function serviceSearchImages(searchWord, page) {
   try {
+    loaderStart();
+
     const params = new URLSearchParams({
       q: `${searchWord}`,
       image_type: 'photo',
@@ -42,8 +64,10 @@ async function serviceSearchImages(searchWord, page) {
       page: `${page}`,
       per_page: 40,
     });
-    loaderStart();
+
     const response = await axios.get(`${BASE_URL}?key=${API_KEY}`, { params });
+
+    totalHits = response.data.totalHits;
 
     if (isCorrectName(response)) {
       // refs.loadMore.classList.remove('is-hidden');
@@ -68,7 +92,9 @@ function isCorrectName(response) {
   );
 
   refs.warningText.classList.add('is-hidden');
+
   loaderStop();
+
   return false;
 }
 
@@ -122,23 +148,6 @@ function smoothScroll() {
     behavior: 'smooth',
   });
 }
-
-const onEntry = entries => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting && searchWord !== '' && imageAmount < 500) {
-      loaderStart();
-      console.log(loaderStart);
-      page += 1;
-      serviceSearchImages(searchWord, page);
-    } else if (imageAmount > 500) {
-      observer.unobserve(entry.target);
-    }
-  });
-};
-
-const observer = new IntersectionObserver(onEntry, {
-  rootMargin: '150px',
-});
 
 function loaderStart() {
   refs.loader.classList.remove('is-hidden');
